@@ -36,7 +36,11 @@ type Dialer struct {
 	// UpstreamDialer allows you to do things like proxy your SMTP connection.
 	// If you use this option, always be sure to base it on DialTimeout instead
 	// of Dial
-	UpstreamDialer *net.Dialer
+	UpstreamDialer UpstreamDialer
+}
+
+type UpstreamDialer interface {
+	Dial(network, address string) (net.Conn, error)
 }
 
 // NewDialer returns a new SMTP Dialer. The given parameters are used to connect
