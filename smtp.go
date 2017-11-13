@@ -33,6 +33,10 @@ type Dialer struct {
 	// LocalName is the hostname sent to the SMTP server with the HELO command.
 	// By default, "localhost" is sent.
 	LocalName string
+	// UpstreamDialer allows you to do things like proxy your SMTP connection.
+	// If you use this option, always be sure to base it on DialTimeout instead
+	// of Dial
+	UpstreamDialer *net.Dialer
 }
 
 // NewDialer returns a new SMTP Dialer. The given parameters are used to connect
@@ -58,7 +62,13 @@ func NewPlainDialer(host string, port int, username, password string) *Dialer {
 // Dial dials and authenticates to an SMTP server. The returned SendCloser
 // should be closed when done using it.
 func (d *Dialer) Dial() (SendCloser, error) {
-	conn, err := netDialTimeout("tcp", addr(d.Host, d.Port), 10*time.Second)
+	var err error
+	var conn net.Conn
+	if d.UpstreamDialer != nil {
+		conn, err = d.UpstreamDialer.Dial("tcp", addr(d.Host, d.Port))
+	} else {
+		conn, err = netDialTimeout("tcp", addr(d.Host, d.Port), 10*time.Second)
+	}
 	if err != nil {
 		return nil, err
 	}
